@@ -169,7 +169,7 @@ function createCardSelectionModal(currentCard, cardPosition) {
 captureButton.addEventListener('click', async () => {
   if (!stream) {
     // If camera is not active, start it
-    captureButton.textContent = 'Take Photo';
+    captureButton.textContent = 'Mach es Bild';
     await startCamera();
   } else {
     // If camera is active, take photo and stop camera
@@ -183,25 +183,29 @@ captureButton.addEventListener('click', async () => {
     // Stop the camera and reset stream variable
     stopCamera();
     stream = null;
-    captureButton.textContent = 'Capture Photo';
+    captureButton.textContent = 'Mach es Bild';
     
     try {
       const result = await runModelRecognize();
+      console.log('Server response:', result);  // Debug log
       
-      if (result.error) {
+      let recognizedCards = result.cards;
+      console.log('Recognized cards:', recognizedCards);  // Debug log
+      
+      // Check if we have the correct number of cards
+      if (!recognizedCards || recognizedCards.length < 9) {
+        const numCards = recognizedCards ? recognizedCards.length : 0;
         outputDiv.innerHTML = `
           <div id="prediction-section" style="background-color: #ffebee;">
             <div id="prediction-text" style="color: #c62828; padding: 20px;">
-              ${result.error}
+              Nöd 9 Charte detected
             </div>
           </div>
         `;
         return;
       }
 
-      let recognizedCards = result.cards;
-      
-      // Only show the image and results if cards were successfully recognized
+      // If we have 9 cards, show the full display
       const capturedImage = canvas.toDataURL('image/jpeg');
       outputDiv.innerHTML = `
         <div class="captured-image-container mb-3">
@@ -220,17 +224,21 @@ captureButton.addEventListener('click', async () => {
         });
         cardsSection += '</div>';
       }
-      cardsSection += '<button id="recalculate" class="btn btn-primary mt-3">Recalculate Trumpf</button>';
       cardsSection += '</div>';
 
+      // Add the cards section
+      outputDiv.innerHTML += cardsSection;
+
+      // Add the recalculate button with correct class
+      outputDiv.innerHTML += '<button id="recalculate">Neu Berechne</button>';
+
+      // Add the prediction section
       let predictionSection = `
         <div id="prediction-section">
           <div id="prediction-text">${result.prediction.replace(/\n/g, "<br>")}</div>
         </div>
       `;
-      
-      // Add the cards and prediction sections after the captured image
-      outputDiv.innerHTML += cardsSection + predictionSection;
+      outputDiv.innerHTML += predictionSection;
 
       // Add recalculate button listener
       document.getElementById('recalculate')?.addEventListener('click', async () => {
@@ -238,39 +246,84 @@ captureButton.addEventListener('click', async () => {
         const imageData = canvas.toDataURL('image/jpeg');
         
         try {
-          const response = await fetch('http://127.0.0.1:5000/predict', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
+          console.log('Current cards being sent:', currentCards);  // Debug log
+          let response;
+          try {
+            const requestBody = { 
               image: imageData,
               cards: currentCards
-            }),
-          });
+            };
+            console.log('Sending request with body:', requestBody.cards);  // Debug log
+            
+            response = await fetch('https://192.168.1.19:5001/predict', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(requestBody),
+            });
+          } catch (e) {
+            console.log('Trying localhost...');
+            response = await fetch('https://localhost:5001/predict', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ 
+                image: imageData,
+                cards: currentCards
+              }),
+            });
+          }
           
           const newResult = await response.json();
+          console.log('Server response:', newResult);  // Debug log
+
           if (newResult.error) {
+            console.error('Server returned error:', newResult.error);
             alert('Error: ' + newResult.error);
           } else {
-            document.getElementById('prediction-text').innerHTML = newResult.prediction.replace(/\n/g, "<br>");
+            // Remove old prediction section if it exists
+            const oldPrediction = document.getElementById('prediction-section');
+            if (oldPrediction) {
+              oldPrediction.remove();
+            }
+
+            // Create new prediction section
+            const predictionSection = document.createElement('div');
+            predictionSection.id = 'prediction-section';
+            
+            const predictionText = document.createElement('div');
+            predictionText.id = 'prediction-text';
+            predictionText.innerHTML = newResult.prediction.replace(/\n/g, "<br>");
+            
+            predictionSection.appendChild(predictionText);
+            outputDiv.appendChild(predictionSection);
+            
+            console.log('Updated prediction displayed with:', newResult.prediction);  // Debug log
           }
         } catch (error) {
+          console.error('Detailed recalculation error:', error);
           alert('Error recalculating trumpf: ' + error.message);
         }
       });
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Detailed error:', error);
+      const result = await runModelRecognize();
+      const numCards = result && result.cards ? result.cards.length : 0;
       outputDiv.innerHTML = `
         <div id="prediction-section" style="background-color: #ffebee;">
           <div id="prediction-text" style="color: #c62828; padding: 20px;">
-            Error processing image. Please try again.
+            Nöd 9 Charte detected
           </div>
         </div>
       `;
     }
   }
 });
+
+// Initialize button text
+captureButton.textContent = 'Mach es Bild';
 
 // Hide video initially
 video.style.display = 'none';

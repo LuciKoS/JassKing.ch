@@ -200,3 +200,43 @@ h1 {
     margin: 15px 0;
   }
 }
+
+#capture, #recalculate {
+  display: block;
+  margin: 20px auto;
+  padding: 12px 24px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  background-color: #F5F5DC;  /* Ensure same background color */
+  border: 2px solid #8B4513;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#capture:hover, #recalculate:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+  background-color: #8B4513;
+  color: #F5F5DC;
+}
+
+#capture:active, #recalculate:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Remove any bootstrap classes that might interfere */
+.btn-primary {
+  all: unset;  /* Reset any bootstrap styles */
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+  #capture, #recalculate {
+    padding: 10px 20px;
+    font-size: 16px;
+  }
+}

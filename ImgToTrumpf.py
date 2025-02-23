@@ -64,8 +64,36 @@ def predict():
     data = request.json
     if 'image' not in data:
         return jsonify({'error': 'no image found'})
+    
+    # Check if we're getting manually selected cards
+    manual_cards = data.get('cards', None)
+    
+    if manual_cards:
+        # Use the manually selected cards
+        print("Using manually selected cards:", manual_cards)  # Debug log
+        cards = []
+        for name in manual_cards:
+            card_val = cards_nums.get(name)
+            if card_val is not None:
+                cards.append(card_val)
+            else:
+                cards.append(-1)
+                
+        current_sample = np.array([cards])
+        probabilities = trumpfmodel.predict_proba(current_sample)[0]
+        
+        top3 = probabilities.argsort()[-3:][::-1]
+        top3_classes = [trumpfmodel.classes_[i] for i in top3]
+        top3_probs = probabilities[top3]
+        
+        result_text = "Top 3 Trümpf: \n"
+        for cls, prob in zip(top3_classes, top3_probs):
+            result_text += f"{cls} ({prob:.2f})\n"
+            
+        return jsonify({'prediction': result_text, 'cards': manual_cards})
+    
+    # If no manual cards, proceed with image detection
     image_data = data['image']
-
     if ',' in image_data:
         image_data = image_data.split(',', 1)[1]
     try:
