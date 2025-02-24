@@ -21,11 +21,12 @@ CORS(app, resources={
     }
 })
 
-trumpfmodel = joblib.load('./rf_model2.joblib')
+# Get the directory containing this file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-
-
-model = YOLO('./runs/detect/train3-1/weights/best.pt')
+# Use correct paths for your structure
+trumpfmodel = joblib.load(os.path.join(BASE_DIR, 'rf_model2.joblib'))
+model = YOLO(os.path.join(BASE_DIR, 'train3-1/weights/best.pt'))  # Updated path
 
 cards_nums = {
     "Ei_6":0,
