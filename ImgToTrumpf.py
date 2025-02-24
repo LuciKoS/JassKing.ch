@@ -14,11 +14,11 @@ import ssl
 app = Flask(__name__)
 CORS(app)
 
-trumpfmodel = joblib.load('/Users/lucbaumeler/Documents/Eth/VsCode/MLS/JassGott/Site/rf_model2.joblib')
+trumpfmodel = joblib.load('./rf_model2.joblib')
 
 
 
-model = YOLO('runs/detect/train3-1/weights/best.pt')
+model = YOLO('./train3-1/weights/best.pt')
 
 cards_nums = {
     "Ei_6":0,
