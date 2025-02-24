@@ -1,4 +1,4 @@
-from Site.ImgToTrumpf import app
+from ImgToTrumpf import app
 
 if __name__ == "__main__":
     app.run() 
