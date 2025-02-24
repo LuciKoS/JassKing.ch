@@ -161,14 +161,6 @@ def predict():
         os.remove(temp_filename)
         return jsonify({'error': str(e)})
 if __name__ == '__main__':
-    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    context.load_cert_chain('cert.pem', 'key.pem')
-    
-    app.run(
-        host='0.0.0.0', 
-        port=5001, 
-        debug=True, 
-        ssl_context=context,
-        threaded=True
-    )
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
         
