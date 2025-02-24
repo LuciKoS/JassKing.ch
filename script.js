@@ -171,15 +171,28 @@ captureButton.addEventListener('click', async () => {
     console.log('Capture button clicked');
     const canvas = document.getElementById('canvas');
     const context = canvas.getContext('2d');
+    
+    // Make sure we're getting the video dimensions
+    console.log('Video dimensions:', video.videoWidth, video.videoHeight);
+    
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    const imageData = canvas.toDataURL('image/jpeg');
-    console.log('Image captured and converted to data URL');
+    const imageData = canvas.toDataURL('image/jpeg', 0.8); // Added quality parameter
+    console.log('Image captured, data URL length:', imageData.length);
+
+    // Show loading state
+    outputDiv.innerHTML = `
+      <div id="prediction-section">
+        <div id="prediction-text">
+          Processing image...
+        </div>
+      </div>
+    `;
 
     try {
-      console.log('Sending request to:', 'https://jassgott-1e2a879af8c1.herokuapp.com/predict');
+      console.log('Sending request to Heroku...');
       const response = await fetch('https://jassgott-1e2a879af8c1.herokuapp.com/predict', {
         method: 'POST',
         headers: {
@@ -190,21 +203,21 @@ captureButton.addEventListener('click', async () => {
         }),
       });
       
-      console.log('Response received:', response);
+      console.log('Response status:', response.status);
       const result = await response.json();
-      console.log('Parsed result:', result);
+      console.log('Server response:', result);
 
       if (result.error) {
-        console.error('Server returned error:', result.error);
+        console.error('Server error:', result.error);
         outputDiv.innerHTML = `
           <div id="prediction-section" style="background-color: #ffebee;">
             <div id="prediction-text" style="color: #c62828; padding: 20px;">
-              Nöd 9 Charte detected
+              ${result.error}
             </div>
           </div>
         `;
       } else {
-        // Create separate sections for prediction and cards
+        console.log('Processing successful result');
         let predictionHtml = `<div id="prediction-text">${result.prediction.replace(/\n/g, "<br>")}</div>`;
         
         let cardsHtml = '';
@@ -220,7 +233,7 @@ captureButton.addEventListener('click', async () => {
         outputDiv.innerHTML = predictionHtml + cardsHtml;
       }
     } catch (error) {
-      console.error('Detailed error:', error);
+      console.error('Network or parsing error:', error);
       outputDiv.innerHTML = `
         <div id="prediction-section" style="background-color: #ffebee;">
           <div id="prediction-text" style="color: #c62828; padding: 20px;">
@@ -231,6 +244,13 @@ captureButton.addEventListener('click', async () => {
     }
   } catch (error) {
     console.error('Capture error:', error);
+    outputDiv.innerHTML = `
+      <div id="prediction-section" style="background-color: #ffebee;">
+        <div id="prediction-text" style="color: #c62828; padding: 20px;">
+          Error capturing image: ${error.message}
+        </div>
+      </div>
+    `;
   }
 });
 
