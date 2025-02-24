@@ -13,9 +13,11 @@ import ssl
 
 app = Flask(__name__)
 CORS(app, resources={
-    r"/predict": {
-        "origins": ["https://your-github-pages-url.github.io", "http://localhost:5000"],
-        "methods": ["POST", "OPTIONS"]
+    r"/*": {
+        "origins": ["https://lucbaumeler.github.io", "http://localhost:5000"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"],
+        "max_age": 3600
     }
 })
 
@@ -63,6 +65,10 @@ cards_nums = {
     "Si_K": 34,
     "Si_A": 35,
 }
+
+@app.route('/predict', methods=['OPTIONS'])
+def handle_options():
+    return '', 204
 
 @app.route('/predict', methods=['POST'])
 def predict():
