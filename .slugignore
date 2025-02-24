@@ -1,0 +1,9 @@
+/images3
+/node_modules
+*.pem
+*.jpg
+/train3-1
+README.md
+package.json
+package-lock.json
+server.js 
