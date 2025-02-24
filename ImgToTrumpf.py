@@ -23,7 +23,7 @@ trumpfmodel = joblib.load('./rf_model2.joblib')
 
 
 
-model = YOLO('./train3-1/weights/best.pt')
+model = YOLO('./runs/detect/train3-1/weights/best.pt')
 
 cards_nums = {
     "Ei_6":0,

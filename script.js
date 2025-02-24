@@ -6,6 +6,33 @@ const outputDiv = document.getElementById('output');
 
 let stream = null;
 
+// At the start of your script, add error handling for camera
+async function initCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ 
+      video: { 
+        facingMode: 'environment',
+        width: { ideal: 640 },
+        height: { ideal: 640 }
+      } 
+    });
+    video.srcObject = stream;
+    console.log('Camera initialized successfully');
+  } catch (error) {
+    console.error('Camera initialization error:', error);
+    outputDiv.innerHTML = `
+      <div id="prediction-section" style="background-color: #ffebee;">
+        <div id="prediction-text" style="color: #c62828; padding: 20px;">
+          Camera error: ${error.message}. Please make sure camera permissions are enabled.
+        </div>
+      </div>
+    `;
+  }
+}
+
+// Call this when the page loads
+document.addEventListener('DOMContentLoaded', initCamera);
+
 // Function to start camera
 async function startCamera() {
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
