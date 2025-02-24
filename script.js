@@ -255,7 +255,7 @@ captureButton.addEventListener('click', async () => {
             };
             console.log('Sending request with body:', requestBody.cards);  // Debug log
             
-            response = await fetch('https://192.168.1.19:5001/predict', {
+            response = await fetch('https://jassgott-1e2a879af8c1.herokuapp.com/predict', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
