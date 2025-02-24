@@ -6,8 +6,8 @@ global:
   application_name: jassgott
   branch: null
   default_ec2_keyname: null
-  default_platform: Python 3.10
-  default_region: eu-central-1  # or your preferred region
+  default_platform: Python 3.9
+  default_region: eu-central-1
   include_git_submodules: true
   instance_profile: null
   platform_name: null
