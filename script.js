@@ -167,34 +167,35 @@ function createCardSelectionModal(currentCard, cardPosition) {
 
 // When the capture button is clicked
 captureButton.addEventListener('click', async () => {
-  if (!stream) {
-    // If camera is not active, start it
-    captureButton.textContent = 'Mach es Bild';
-    await startCamera();
-  } else {
-    // If camera is active, take photo and stop camera
-    const scaleFactor = 0.25;
-    canvas.width = video.videoWidth * scaleFactor;
-    canvas.height = video.videoHeight * scaleFactor;
-    
+  try {
+    console.log('Capture button clicked');
+    const canvas = document.getElementById('canvas');
     const context = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    // Stop the camera and reset stream variable
-    stopCamera();
-    stream = null;
-    captureButton.textContent = 'Mach es Bild';
-    
+    const imageData = canvas.toDataURL('image/jpeg');
+    console.log('Image captured and converted to data URL');
+
     try {
-      const result = await runModelRecognize();
-      console.log('Server response:', result);  // Debug log
+      console.log('Sending request to:', 'https://jassgott-1e2a879af8c1.herokuapp.com/predict');
+      const response = await fetch('https://jassgott-1e2a879af8c1.herokuapp.com/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          image: imageData
+        }),
+      });
       
-      let recognizedCards = result.cards;
-      console.log('Recognized cards:', recognizedCards);  // Debug log
-      
-      // Check if we have the correct number of cards
-      if (!recognizedCards || recognizedCards.length < 9) {
-        const numCards = recognizedCards ? recognizedCards.length : 0;
+      console.log('Response received:', response);
+      const result = await response.json();
+      console.log('Parsed result:', result);
+
+      if (result.error) {
+        console.error('Server returned error:', result.error);
         outputDiv.innerHTML = `
           <div id="prediction-section" style="background-color: #ffebee;">
             <div id="prediction-text" style="color: #c62828; padding: 20px;">
@@ -202,123 +203,34 @@ captureButton.addEventListener('click', async () => {
             </div>
           </div>
         `;
-        return;
-      }
-
-      // If we have 9 cards, show the full display
-      const capturedImage = canvas.toDataURL('image/jpeg');
-      outputDiv.innerHTML = `
-        <div class="captured-image-container mb-3">
-          <img src="${capturedImage}" alt="Captured photo" style="max-width: 100%; max-height: 300px; display: block; margin: 0 auto;">
-        </div>
-      `;
-      
-      // Create the cards display section
-      let cardsSection = '<div id="cards-section">';
-      cardsSection += '<h2>Dini Hand</h2>';
-      if (recognizedCards && recognizedCards.length > 0) {
-        cardsSection += '<div class="cards-display">';
-        recognizedCards.forEach((card, index) => {
-          const imgPath = cardImageMap[card];
-          cardsSection += `<img src="${imgPath}" alt="${card}" class="card-image" onclick="createCardSelectionModal('${card}', ${index})"/>`;
-        });
-        cardsSection += '</div>';
-      }
-      cardsSection += '</div>';
-
-      // Add the cards section
-      outputDiv.innerHTML += cardsSection;
-
-      // Add the recalculate button with correct class
-      outputDiv.innerHTML += '<button id="recalculate">Neu Berechne</button>';
-
-      // Add the prediction section
-      let predictionSection = `
-        <div id="prediction-section">
-          <div id="prediction-text">${result.prediction.replace(/\n/g, "<br>")}</div>
-        </div>
-      `;
-      outputDiv.innerHTML += predictionSection;
-
-      // Add recalculate button listener
-      document.getElementById('recalculate')?.addEventListener('click', async () => {
-        const currentCards = Array.from(document.querySelectorAll('.card-image')).map(img => img.alt);
-        const imageData = canvas.toDataURL('image/jpeg');
+      } else {
+        // Create separate sections for prediction and cards
+        let predictionHtml = `<div id="prediction-text">${result.prediction.replace(/\n/g, "<br>")}</div>`;
         
-        try {
-          console.log('Current cards being sent:', currentCards);  // Debug log
-          let response;
-          try {
-            const requestBody = { 
-              image: imageData,
-              cards: currentCards
-            };
-            console.log('Sending request with body:', requestBody.cards);  // Debug log
-            
-            response = await fetch('https://jassgott-1e2a879af8c1.herokuapp.com/predict', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(requestBody),
-            });
-          } catch (e) {
-            console.log('Trying localhost...');
-            response = await fetch('https://localhost:5001/predict', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ 
-                image: imageData,
-                cards: currentCards
-              }),
-            });
-          }
-          
-          const newResult = await response.json();
-          console.log('Server response:', newResult);  // Debug log
-
-          if (newResult.error) {
-            console.error('Server returned error:', newResult.error);
-            alert('Error: ' + newResult.error);
-          } else {
-            // Remove old prediction section if it exists
-            const oldPrediction = document.getElementById('prediction-section');
-            if (oldPrediction) {
-              oldPrediction.remove();
-            }
-
-            // Create new prediction section
-            const predictionSection = document.createElement('div');
-            predictionSection.id = 'prediction-section';
-            
-            const predictionText = document.createElement('div');
-            predictionText.id = 'prediction-text';
-            predictionText.innerHTML = newResult.prediction.replace(/\n/g, "<br>");
-            
-            predictionSection.appendChild(predictionText);
-            outputDiv.appendChild(predictionSection);
-            
-            console.log('Updated prediction displayed with:', newResult.prediction);  // Debug log
-          }
-        } catch (error) {
-          console.error('Detailed recalculation error:', error);
-          alert('Error recalculating trumpf: ' + error.message);
+        let cardsHtml = '';
+        if (result.cards && result.cards.length > 0) {
+          cardsHtml += "<div class='cards-display'>";
+          result.cards.forEach(card => {
+            const imgPath = cardImageMap[card]; 
+            cardsHtml += `<img src="${imgPath}" alt="${card}" class="card-image"/>`;
+          });
+          cardsHtml += "</div>";
         }
-      });
+        
+        outputDiv.innerHTML = predictionHtml + cardsHtml;
+      }
     } catch (error) {
       console.error('Detailed error:', error);
-      const result = await runModelRecognize();
-      const numCards = result && result.cards ? result.cards.length : 0;
       outputDiv.innerHTML = `
         <div id="prediction-section" style="background-color: #ffebee;">
           <div id="prediction-text" style="color: #c62828; padding: 20px;">
-            Nöd 9 Charte detected
+            Error: ${error.message}
           </div>
         </div>
       `;
     }
+  } catch (error) {
+    console.error('Capture error:', error);
   }
 });
 
