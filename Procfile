@@ -1,1 +1,1 @@
-web: python Site/ImgToTrumpf.py 
+web: gunicorn application:app
