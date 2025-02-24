@@ -12,7 +12,12 @@ import ssl
 
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={
+    r"/predict": {
+        "origins": ["https://your-github-pages-url.github.io", "http://localhost:5000"],
+        "methods": ["POST", "OPTIONS"]
+    }
+})
 
 trumpfmodel = joblib.load('./rf_model2.joblib')
 
